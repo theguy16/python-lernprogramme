@@ -4,6 +4,7 @@
 """
 Vokabeltrainer: lädt 'vokabeln = {englisch: [deutsch, ...], ...}' aus URL oder Datei,
 fragt gemischt EN->DE und DE->EN, ignoriert Groß-/Kleinschreibung, vergibt Punkte und Note.
+Nach jeder Runde geht es zurück zum Anfang; Eingabe '0' beendet.
 
 Aufruf:
   python3 vokabeltrainer.py                # lädt Standard-URL
@@ -152,7 +153,7 @@ def ask(
         print(f"falsch | richtig: {', '.join(valid)}")
         return False
 
-    for i in range(n_questions):
+    for _ in range(n_questions):
         en, de_list = random.choice(en_items)
         direction = (
             1 if mode == 1 else
@@ -197,19 +198,31 @@ def main():
             raise
 
     rev = build_reverse(vok)
-
-    print("Modus: 1=Englisch→Deutsch, 2=Deutsch→Englisch, 3=Gemischt")
-    mode = read_int("Wähle Modus (1/2/3): ", default=3, valid={1, 2, 3})
-    n = read_int("Anzahl Fragen (leer=20): ", default=20)
-
     print(f"{len(vok)} Einträge geladen.\n")
-    correct, total = ask(vok, rev, mode, n)
 
-    pct = (correct / total * 100.0) if total else 0.0
-    note = grade_from_percent(pct)
-    print("\nErgebnis:")
-    print(f"richtig: {correct}/{total} ({pct:.1f} %)")
-    print(f"Note: {note}")
+    while True:
+        print("Modus: 1=Englisch→Deutsch, 2=Deutsch→Englisch, 3=Gemischt")
+        mode = read_int("Wähle Modus (1/2/3, 0=Ende): ", default=3, valid={0, 1, 2, 3})
+        if mode == 0:
+            print("Beendet.")
+            return
+
+        n = read_int("Anzahl Fragen (leer=20, 0=Ende): ", default=20)
+        if n == 0:
+            print("Beendet.")
+            return
+
+        correct, total = ask(vok, rev, mode, n)
+
+        pct = (correct / total * 100.0) if total else 0.0
+        note = grade_from_percent(pct)
+        print("\nErgebnis:")
+        print(f"richtig: {correct}/{total} ({pct:.1f} %)")
+        print(f"Note: {note}\n")
+        # Danach automatisch zurück zum Anfang der Schleife
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nBeendet.")
